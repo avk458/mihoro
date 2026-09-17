@@ -2,6 +2,11 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build
+        required: true
+        type: string
   push:
     tags:
       - "*"
@@ -9,10 +14,13 @@ on:
 permissions:
   contents: write
 
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
 jobs:
   build:
     name: Build release
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -38,7 +46,12 @@ jobs:
             strip: false
 
     steps:
+      - name: Validate tag
+        shell: bash
+        run: '[[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]'
       - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -57,26 +70,37 @@ jobs:
       - name: Package binaries
         run: |
           cd target/${{ matrix.target }}/release
-          tar -czvf mihoro-${{ github.ref_name }}-${{ matrix.target }}.tar.gz mihoro
+          tar -czvf mihoro-${{ env.RELEASE_TAG }}-${{ matrix.target }}.tar.gz mihoro
           cd -
 
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/release/mihoro-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
-          asset_name: mihoro-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
-          tag: ${{ github.ref }}
-          draft: true
+          name: mihoro-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/mihoro-${{ env.RELEASE_TAG }}-${{ matrix.target }}.tar.gz
+          if-no-files-found: error
 
   publish:
     name: Publish complete release
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mihoro-*
+          path: dist
+          merge-multiple: true
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: gh release edit "$RELEASE_TAG" --draft=false --latest
+        shell: bash
+        run: |
+          shopt -s nullglob
+          assets=(dist/*.tar.gz)
+          test "${#assets[@]}" -eq 6
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "Mihoro $RELEASE_TAG" --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --latest
