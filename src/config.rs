@@ -17,11 +17,35 @@ pub enum MihomoChannel {
     Alpha,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ServiceScope {
+    #[default]
+    User,
+    System,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct Subscription {
+    pub name: String,
+    /// HTTPS URL, or an absolute file:// URL for local inputs.
+    pub url: String,
+}
+
 /// `mihoro` configurations.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(default)]
 pub struct Config {
+    #[serde(skip)]
+    pub explicit_mihomo_fields: std::collections::HashSet<String>,
     pub remote_config_url: String,
+    /// System scope uses a protected core and a systemd DynamicUser service.
+    pub service_scope: ServiceScope,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub subscriptions: Vec<Subscription>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub policy_file: Option<String>,
     #[serde(default = "default_ui", skip_serializing_if = "Option::is_none")]
     pub ui: Option<Ui>,
     pub mihomo_channel: MihomoChannel,
@@ -41,6 +65,10 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
+            explicit_mihomo_fields: Default::default(),
+            service_scope: ServiceScope::User,
+            subscriptions: Vec::new(),
+            policy_file: None,
             ui: default_ui(),
             remote_mihomo_binary_url: None,
             mihomo_channel: MihomoChannel::default(),
@@ -152,7 +180,12 @@ impl Config {
     /// Read raw config string from path and parse with crate toml.
     pub fn setup_from(path: &str) -> Result<Config> {
         let raw_config = fs::read_to_string(path)?;
-        let config: Config = toml::from_str(&raw_config)?;
+        let mut config: Config = toml::from_str(&raw_config)?;
+        let raw: toml::Value = toml::from_str(&raw_config)?;
+        if let Some(fields) = raw.get("mihomo_config").and_then(toml::Value::as_table) {
+            config.explicit_mihomo_fields =
+                fields.keys().map(|key| key.replace('_', "-")).collect();
+        }
         Ok(config)
     }
 
@@ -185,8 +218,35 @@ pub fn write_default_if_missing(path: &str) -> Result<bool> {
 
 /// Validate that required config fields are non-empty.
 pub fn validate_config(config: &Config) -> Result<()> {
+    if config.remote_config_url.is_empty() && config.subscriptions.is_empty() {
+        bail!("`remote_config_url` or `subscriptions` is required");
+    }
+    if !config.remote_config_url.is_empty() && !config.subscriptions.is_empty() {
+        bail!("use either remote_config_url or subscriptions, not both");
+    }
+    if let Some(policy) = &config.policy_file {
+        if !Path::new(shellexpand::tilde(policy).as_ref()).is_absolute() {
+            bail!("policy_file must be an absolute path");
+        }
+    }
+    let mut names = std::collections::HashSet::new();
+    for sub in &config.subscriptions {
+        if sub.name.is_empty()
+            || !sub
+                .name
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_')
+            || !names.insert(&sub.name)
+        {
+            bail!("subscription names must be unique and contain only letters, digits, '-' or '_'");
+        }
+        let url = reqwest::Url::parse(&sub.url)
+            .map_err(|_| anyhow::anyhow!("invalid URL for subscription {}", sub.name))?;
+        if !matches!(url.scheme(), "https" | "http" | "file") {
+            bail!("unsupported URL scheme for subscription {}", sub.name);
+        }
+    }
     let required_fields = [
-        ("remote_config_url", &config.remote_config_url),
         ("mihomo_binary_path", &config.mihomo_binary_path),
         ("mihomo_config_root", &config.mihomo_config_root),
         ("user_systemd_root", &config.user_systemd_root),

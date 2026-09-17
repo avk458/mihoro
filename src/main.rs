@@ -2,6 +2,7 @@ mod cmd;
 mod config;
 mod cron;
 mod init;
+mod managed;
 mod mihoro;
 mod proxy;
 mod resolve_mihomo_bin;
@@ -104,6 +105,13 @@ async fn cli() -> Result<()> {
         .connect_timeout(Duration::from_secs(10))
         .read_timeout(Duration::from_secs(30))
         .build()?;
+
+    if let Some(config) = config::load_config(shellexpand::tilde(&args.mihoro_config).as_ref())? {
+        if managed::enabled(&config) || matches!(args.command, Some(Commands::Render { .. })) {
+            config::validate_config(&config)?;
+            return managed::run(config, &args, &client).await;
+        }
+    }
 
     // Handle Init and Setup before constructing Mihoro, which requires a valid config.
     match &args.command {
@@ -246,6 +254,7 @@ async fn cli() -> Result<()> {
                 anyhow::bail!("one or more update stages failed - see summary above");
             }
         }
+        Some(Commands::Render { .. }) => anyhow::bail!("create a mihoro config before rendering"),
         Some(Commands::Apply) => mihoro.apply().await?,
         Some(Commands::Uninstall) => mihoro.uninstall()?,
         Some(Commands::Proxy { proxy }) => mihoro.proxy_commands(proxy)?,

@@ -1,0 +1,12 @@
+# Run init, update, and apply with sudo and an explicit -m path.
+service_scope = "system"
+policy_file = "/etc/mihoro/policy.yaml"
+mihoro_user_agent = "clash-verge/v2.4.0"
+
+[[subscriptions]]
+name = "primary"
+url = "https://example.com/primary-subscription"
+
+[[subscriptions]]
+name = "residential"
+url = "https://example.com/residential-subscription"
