@@ -77,6 +77,20 @@ pub enum Commands {
     },
     /// Apply mihomo config overrides and restart mihomo.service
     Apply,
+    /// Render and validate configuration without changing the service
+    Render {
+        /// Core binary used for validation (does not install or start it)
+        #[arg(long)]
+        core: Option<std::path::PathBuf>,
+        /// Directory containing geodata used during validation
+        #[arg(long)]
+        data_dir: Option<std::path::PathBuf>,
+        #[arg(long)]
+        output: std::path::PathBuf,
+        /// Use subscription inputs from the last installed generation
+        #[arg(long)]
+        offline: bool,
+    },
     /// Start mihomo.service with systemctl
     Start,
     /// Check mihomo.service status with systemctl

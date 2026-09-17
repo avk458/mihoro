@@ -91,7 +91,7 @@ download_mihoro() {
   fi
   need_cmd grep
 
-  local _releases_url="https://api.github.com/repos/spencerwooo/mihoro/releases/latest"
+  local _releases_url="https://api.github.com/repos/avk458/mihoro/releases/latest"
   local _releases
   case "$_dld" in
   curl) _releases="$(curl -sL "$_releases_url")" ||
@@ -102,7 +102,7 @@ download_mihoro() {
 
   local _package_url
   _package_url="$(echo "$_releases" | grep "browser_download_url" | cut -d '"' -f 4 | grep "$_arch")" ||
-    err "mihoro has not yet been packaged for your architecture ($_arch), please file an issue at https://github.com/spencerwooo/mihoro/issues"
+    err "mihoro has not yet been packaged for your architecture ($_arch), please file an issue at https://github.com/avk458/mihoro/issues"
 
   local _ext
   case "$_package_url" in

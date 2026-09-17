@@ -11,7 +11,7 @@ pub async fn run_upgrade(no_confirm: bool, target: Option<String>) -> Result<()>
     let result = tokio::task::spawn_blocking(move || {
         let mut builder = self_update::backends::github::Update::configure();
         builder
-            .repo_owner("spencerwooo")
+            .repo_owner("avk458")
             .repo_name("mihoro")
             .bin_name("mihoro")
             .show_download_progress(true)
@@ -72,7 +72,7 @@ pub async fn check_for_update() -> Result<Option<String>> {
 
     let result = tokio::task::spawn_blocking(move || {
         let releases = self_update::backends::github::ReleaseList::configure()
-            .repo_owner("spencerwooo")
+            .repo_owner("avk458")
             .repo_name("mihoro")
             .build()?
             .fetch()?;

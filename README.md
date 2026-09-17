@@ -1,3 +1,7 @@
+> This fork adds system service mode, TUN policy, and named subscription merging.
+> See [system mode and migration](docs/system-mode.md). Build from source until a fork release is available.
+> Upstream: [spencerwooo/mihoro](https://github.com/spencerwooo/mihoro).
+
 <div align="center">
   <div><img src="https://github.com/user-attachments/assets/b292facf-b4d0-4087-b33c-e9ffba061e73" alt="mihoro banner" width="512" /></div>
 
@@ -25,13 +29,13 @@
 ## Install
 
 ```shell
-curl -fsSL https://raw.githubusercontent.com/spencerwooo/mihoro/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/avk458/mihoro/main/install.sh | sh
 ```
 
 Optionally, download over a mirror:
 
 ```shell
-curl -fsSL https://raw.githubusercontent.com/spencerwooo/mihoro/main/install.sh | sh -s -- --mirror https://gh-proxy.org
+curl -fsSL https://raw.githubusercontent.com/avk458/mihoro/main/install.sh | sh -s -- --mirror https://gh-proxy.org
 ```
 
 > [!IMPORTANT]
