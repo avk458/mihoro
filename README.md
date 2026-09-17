@@ -5,14 +5,14 @@
 <div align="center">
   <div><img src="https://github.com/user-attachments/assets/b292facf-b4d0-4087-b33c-e9ffba061e73" alt="mihoro banner" width="512" /></div>
 
-  <a href="https://github.com/spencerwooo/mihoro/actions/workflows/ci.yml">
-    <img src="https://github.com/spencerwooo/mihoro/actions/workflows/ci.yml/badge.svg" alt="CI">
+  <a href="https://github.com/avk458/mihoro/actions/workflows/ci.yml">
+    <img src="https://github.com/avk458/mihoro/actions/workflows/ci.yml/badge.svg" alt="CI">
   </a>
-  <a href="https://github.com/spencerwooo/mihoro/actions/workflows/release.yml">
-    <img src="https://github.com/spencerwooo/mihoro/actions/workflows/release.yml/badge.svg" alt="Release">
+  <a href="https://github.com/avk458/mihoro/actions/workflows/release.yml">
+    <img src="https://github.com/avk458/mihoro/actions/workflows/release.yml/badge.svg" alt="Release">
   </a>
-  <a href="https://github.com/spencerwooo/mihoro/releases/latest">
-    <img src="https://img.shields.io/github/v/release/spencerwooo/mihoro" alt="GitHub release (latest by date)">
+  <a href="https://github.com/avk458/mihoro/releases/latest">
+    <img src="https://img.shields.io/github/v/release/avk458/mihoro" alt="GitHub release (latest by date)">
   </a>
 </div>
 
@@ -21,12 +21,14 @@
 **mihoro** - The 🦀 Rust™-based [Mihomo](https://github.com/MetaCubeX/mihomo) CLI client on Linux.
 
 - Setup, update, apply overrides, and manage with systemd. **No more, no less.**
-- No root privilege required. Maintains per-user instance.
+- User mode requires no root privilege. Optional system mode supports TUN and requires administrator access for installation and updates.
 - First-class support for config subscription.
 
 <img width="1136" height="911" alt="screenshot" src="https://github.com/user-attachments/assets/abfeb381-3ea2-45c8-ac0a-d55f7ba35fbb" />
 
 ## Install
+
+The installer requires a published release in this fork. Until one is available, [build from source](docs/system-mode.md#build-and-inspect).
 
 ```shell
 curl -fsSL https://raw.githubusercontent.com/avk458/mihoro/main/install.sh | sh
